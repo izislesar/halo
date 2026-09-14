@@ -1,0 +1,27 @@
+# laptop selfhost, manual runs only. java blog/cms, h2 embedded for laptop.
+# for anything serious switch to postgres (see SELFHOST.md).
+# usage: docker compose -f selfhost/docker-compose.yml up -d
+
+services:
+  halo:
+    image: halohub/halo:2.26
+    container_name: halo
+    restart: "no"
+    volumes:
+      - halo-data:/root/.halo2
+    ports:
+      - "${HALO_PORT:-8086}:8090"
+    command:
+      - --spring.r2dbc.url=r2dbc:pool:h2:file:///root/.halo2/db/halo-next
+      - --spring.sql.init.platform=h2
+      - --halo.external-url=http://localhost:${HALO_PORT:-8086}/
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/apis/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s # jvm needs a minute
+
+volumes:
+  halo-data:
+    name: halo-data
